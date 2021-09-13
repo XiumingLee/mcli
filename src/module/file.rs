@@ -54,10 +54,6 @@ impl Command for File {
         }
         f
     }
-
-    fn get_desc() -> String {
-        return String::from("file 文件操作子命令");
-    }
 }
 
 fn remove_file_by_condition(matches: &ArgMatches) -> Result<Vec<String>, String> {
@@ -113,7 +109,7 @@ fn remove_file(path: &Path) -> Result<Vec<String>, String> {
 }
 
 
-/// 移除所有符合添加的子文件
+/// 移除所有符合条件的子文件
 fn remove_all_sub_files_by_condition(path: &Path, condition: &str) -> io::Result<()> {
     if path.is_dir() {
         let read_dir = path.read_dir().unwrap();

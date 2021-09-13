@@ -1,16 +1,17 @@
 mod file;
+mod time;
 
 use clap::{App, ArgMatches};
 use crate::module::file::File;
 use std::collections::HashMap;
 use std::io;
+use crate::module::time::Time;
 
 
 #[derive(Clone)]
 pub struct Module<'a> {
     pub app: App<'a>,
     pub f: fn(&ArgMatches) -> Result<Vec<String>, String>,
-    pub desc: String,
 }
 
 /// 模块管理器
@@ -24,6 +25,7 @@ impl<'a> ModuleManager<'a> {
             modules: HashMap::new(),
         };
         mm.register(File::module());
+        mm.register(Time::module());
         mm
     }
 
@@ -50,13 +52,11 @@ pub trait Command {
         Module {
             app: Self::get_app(),
             f: Self::get_fn(),
-            desc: Self::get_desc(),
         }
     }
 
     fn get_app<'a>() -> App<'a>;
     fn get_fn() -> fn(&ArgMatches) -> Result<Vec<String>, String>;
-    fn get_desc() -> String;
 
     /// 用于确定是否继续执行
     fn confirm() -> bool {
