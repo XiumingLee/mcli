@@ -1,8 +1,8 @@
 use crate::module::Command;
 use clap::{App, ArgMatches, Arg};
-use time::{OffsetDateTime, Date};
-use std::time::Instant;
-use std::fmt::Debug;
+use time::{OffsetDateTime};
+use time::{format_description};
+use time::format_description::FormatItem;
 
 /// 时间相关的命令    https://docs.rs/time/0.3.2/time/
 /// 1、时间戳转yyyy-mm-dd HH:MM:SS
@@ -100,16 +100,21 @@ fn print_current_timestamp(matches: &ArgMatches) -> Result<Vec<String>, String> 
 }
 
 fn timestamp_to_str(matches: &ArgMatches) -> Result<Vec<String>, String> {
+    let  format: Vec<FormatItem>  = format_description::parse(DATE_TIME_FORMAT).unwrap();
     // 此处涉及到了强制类型转化
     let timestamp:i128 = matches.value_of(TIMESTAMP).unwrap().parse::<i128>().unwrap();
     let unit = matches.value_of(UNIT).unwrap();
     if "s".eq(unit) {
-        // let date_time = OffsetDateTime::from_unix_timestamp(timestamp.parse().unwrap());
-        Ok(vec!["格式化的时间为：".to_owned() + timestamp.to_string().as_str()])
+        let timestamp:i64 = timestamp as i64;
+        let date_time_s = OffsetDateTime::from_unix_timestamp(timestamp).unwrap();
+        let result = date_time_s.format(&format).unwrap();
+        Ok(vec!["格式化的时间为：".to_owned() + result.as_str()])
     } else if "ms".eq(unit) {
         // 秒，毫秒，微秒，纳秒   所以纳秒除以1000000就是毫秒的值
-        // let timestamp = OffsetDateTime::now_utc().unix_timestamp_nanos() / 1_000_000;
-        Ok(vec!["格式化的时间为：".to_owned() + timestamp.to_string().as_str()])
+        let timestamp = timestamp * 1_000_000;
+        let date_time_ms = OffsetDateTime::from_unix_timestamp_nanos(timestamp).unwrap();
+        let result = date_time_ms.format(&format).unwrap();
+        Ok(vec!["格式化的时间为：".to_owned() + result.as_str()])
     } else {
         Err("--unit 时间单位不正确！".to_string())
     }
@@ -122,9 +127,17 @@ fn str_to_timestamp(matches: &ArgMatches) -> Result<Vec<String>, String> {
 
 #[test]
 fn test_time() {
-    let date_time:i64 = 1631524303317;
-    let offset_date_time = OffsetDateTime::from_unix_timestamp(date_time).unwrap();
+    let date_time:i128 = 1631524303317000000;
+    let offset_date_time = OffsetDateTime::from_unix_timestamp_nanos(date_time).unwrap();
+    let format = format_description::parse(DATE_TIME_FORMAT).unwrap();
+    let result = offset_date_time.format(&format).unwrap();
+    println!("{}",result)
+    // format_description::parse()
+    // offset_date_time.format()
+    // offset_date_time.fmt()
+    // offset_date_time
+    // let x = offset_date_time.format(format_description::parse(DATE_TIME_FORMAT)?)?;
     // let result = offset_date_time.fmt(format_description::parse(DATE_TIME_FORMAT)).unwrap();
-    OffsetDateTime::f
-    println!("测试一下！{}",result);
+    // OffsetDateTime::f
+    // println!("测试一下！{}",x);
 }
