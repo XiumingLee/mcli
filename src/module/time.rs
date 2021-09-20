@@ -121,17 +121,54 @@ fn timestamp_to_str(matches: &ArgMatches) -> Result<Vec<String>, String> {
 }
 
 fn str_to_timestamp(matches: &ArgMatches) -> Result<Vec<String>, String> {
+    let  format: Vec<FormatItem>  = format_description::parse(DATE_TIME_FORMAT).unwrap();
+    let time_str = matches.value_of(TIME_STR).unwrap();
+    let unit = matches.value_of(UNIT).unwrap();
+    println!("输入的time_str为：{}",time_str);
 
-    Err("命令行参数不正确！".to_string())
+    if "s".eq(unit) {
+        let offset_date_time = OffsetDateTime::parse(time_str, &format);
+        match offset_date_time {
+            Ok(date_time) => {
+                Ok(vec!["精确到s的时间戳为：".to_owned() + date_time.unix_timestamp().to_string().as_str()])
+            },
+            Err(_) => Err("输入的日期字符串不正确！".to_string())
+        }
+    } else if "ms".eq(unit) {
+        let offset_date_time = OffsetDateTime::parse(time_str, &format);
+        match offset_date_time {
+            Ok(date_time) => {
+                Ok(vec!["精确到ms的时间戳为：".to_owned() + (date_time.unix_timestamp_nanos()/1_000_000).to_string().as_str()])
+            },
+            Err(_) => Err("输入的日期字符串不正确！".to_string())
+        }
+    } else {
+        Err("--unit 时间单位不正确！".to_string())
+    }
 }
 
 #[test]
 fn test_time() {
-    let date_time:i128 = 1631524303317000000;
-    let offset_date_time = OffsetDateTime::from_unix_timestamp_nanos(date_time).unwrap();
+
+    /// 时间戳转字符串
+    // let date_time:i128 = 1631524303317000000;
+    // let offset_date_time = OffsetDateTime::from_unix_timestamp_nanos(date_time).unwrap();
     let format = format_description::parse(DATE_TIME_FORMAT).unwrap();
-    let result = offset_date_time.format(&format).unwrap();
-    println!("{}",result)
+    // let result = offset_date_time.format(&format).unwrap();
+    // println!("{}",result);
+
+
+    /// 字符串转时间戳
+    let time_str = "2021-09-21 09:00:31";
+    let time = OffsetDateTime::parse(time_str, &format);
+    match time {
+        Ok(date_time) => {
+            println!("{}",date_time.unix_timestamp())
+        },
+        Err(e) => println!("{}",e)
+    }
+
+
     // format_description::parse()
     // offset_date_time.format()
     // offset_date_time.fmt()
