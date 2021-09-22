@@ -1,6 +1,6 @@
 use crate::module::Command;
 use clap::{App, ArgMatches, Arg};
-use time::{OffsetDateTime};
+use time::{OffsetDateTime, PrimitiveDateTime, UtcOffset};
 use time::{format_description};
 use time::format_description::FormatItem;
 
@@ -17,8 +17,9 @@ const UNIT: &str = "unit";
 const TIMESTAMP: &str = "timestamp";
 /// 格式化时间字符串
 const TIME_STR: &str = "string";
-/// 时间格式化
+/// 时间格式化  现阶段 还没有支持到更小的秒数
 const  DATE_TIME_FORMAT: &str = "[year]-[month]-[day] [hour]:[minute]:[second]";
+
 
 impl Command for Time {
     fn get_app<'a>() -> App<'a> {
@@ -107,12 +108,16 @@ fn timestamp_to_str(matches: &ArgMatches) -> Result<Vec<String>, String> {
     if "s".eq(unit) {
         let timestamp:i64 = timestamp as i64;
         let date_time_s = OffsetDateTime::from_unix_timestamp(timestamp).unwrap();
+        // 设置时间偏移量
+        let date_time_s = date_time_s.to_offset(get_utc_offset());
         let result = date_time_s.format(&format).unwrap();
         Ok(vec!["格式化的时间为：".to_owned() + result.as_str()])
     } else if "ms".eq(unit) {
         // 秒，毫秒，微秒，纳秒   所以纳秒除以1000000就是毫秒的值
         let timestamp = timestamp * 1_000_000;
         let date_time_ms = OffsetDateTime::from_unix_timestamp_nanos(timestamp).unwrap();
+        // 设置时间偏移量
+        let date_time_ms = date_time_ms.to_offset(get_utc_offset());
         let result = date_time_ms.format(&format).unwrap();
         Ok(vec!["格式化的时间为：".to_owned() + result.as_str()])
     } else {
@@ -127,18 +132,20 @@ fn str_to_timestamp(matches: &ArgMatches) -> Result<Vec<String>, String> {
     println!("输入的time_str为：{}",time_str);
 
     if "s".eq(unit) {
-        let offset_date_time = OffsetDateTime::parse(time_str, &format);
-        match offset_date_time {
-            Ok(date_time) => {
-                Ok(vec!["精确到s的时间戳为：".to_owned() + date_time.unix_timestamp().to_string().as_str()])
+        let primitive_date_time_result = PrimitiveDateTime::parse(time_str, &format);
+        match primitive_date_time_result {
+            Ok(primitive_date_time) => {
+                let offset_date_time = primitive_date_time.assume_offset(get_utc_offset());
+                Ok(vec!["精确到s的时间戳为：".to_owned() + offset_date_time.unix_timestamp().to_string().as_str()])
             },
             Err(_) => Err("输入的日期字符串不正确！".to_string())
         }
     } else if "ms".eq(unit) {
-        let offset_date_time = OffsetDateTime::parse(time_str, &format);
-        match offset_date_time {
-            Ok(date_time) => {
-                Ok(vec!["精确到ms的时间戳为：".to_owned() + (date_time.unix_timestamp_nanos()/1_000_000).to_string().as_str()])
+        let primitive_date_time_result = PrimitiveDateTime::parse(time_str, &format);
+        match primitive_date_time_result {
+            Ok(primitive_date_time) => {
+                let offset_date_time = primitive_date_time.assume_offset(get_utc_offset());
+                Ok(vec!["精确到ms的时间戳为：".to_owned() + (offset_date_time.unix_timestamp_nanos()/1_000_000).to_string().as_str()])
             },
             Err(_) => Err("输入的日期字符串不正确！".to_string())
         }
@@ -147,10 +154,21 @@ fn str_to_timestamp(matches: &ArgMatches) -> Result<Vec<String>, String> {
     }
 }
 
+/// 时间偏移量
+fn get_utc_offset() -> UtcOffset {
+    // 获取本地时间偏移量
+    let local_offset_result = UtcOffset::current_local_offset();
+    match local_offset_result {
+        Ok(local_offset) => local_offset,
+        // 如果获取失败则使用中国时间偏移量
+        Err(_) =>  UtcOffset::from_hms(8, 0, 0).unwrap()
+    }
+}
+
 #[test]
 fn test_time() {
 
-    /// 时间戳转字符串
+    // 时间戳转字符串
     // let date_time:i128 = 1631524303317000000;
     // let offset_date_time = OffsetDateTime::from_unix_timestamp_nanos(date_time).unwrap();
     let format = format_description::parse(DATE_TIME_FORMAT).unwrap();
@@ -158,20 +176,19 @@ fn test_time() {
     // println!("{}",result);
 
 
-    /// 字符串转时间戳
+    // 字符串转时间戳
     let time_str = "2021-09-21 09:00:31";
-    let time = OffsetDateTime::parse(time_str, &format);
+    let time = PrimitiveDateTime::parse(time_str, &format);
     match time {
         Ok(date_time) => {
-            println!("{}",date_time.unix_timestamp())
+            println!("获取当前偏移量：{}",get_utc_offset());
+            println!("转换为时间戳为：{}",date_time)
         },
-        Err(e) => println!("{}",e)
+        Err(e) => eprintln!("转换出错：{}",e)
     }
 
 
     // format_description::parse()
-    // offset_date_time.format()
-    // offset_date_time.fmt()
     // offset_date_time
     // let x = offset_date_time.format(format_description::parse(DATE_TIME_FORMAT)?)?;
     // let result = offset_date_time.fmt(format_description::parse(DATE_TIME_FORMAT)).unwrap();

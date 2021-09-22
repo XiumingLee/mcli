@@ -10,4 +10,4 @@ edition = "2018"
 [dependencies]
 clap = "3.0.0-beta.4"
 #time = "0.3.2"
-time = { version = "0.3.2", features = ["formatting","parsing"] }  ## 开启相应的特性，已达到使用特定功能的目的，可以通过查看相应的方法注解查看相应的特性分类
+time = { version = "0.3.2", features = ["formatting","parsing","local-offset"] }  ## 开启相应的特性，已达到使用特定功能的目的，可以通过查看相应的方法注解查看相应的特性分类
